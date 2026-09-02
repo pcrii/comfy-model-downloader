@@ -11,6 +11,7 @@ Supports:
 - Presets:
     * klein-9b (Distilled FLUX.2 Klein 9B + Ponpoke Q8 GGUF + VAE)
     * klein-9b-base (Undistilled FLUX.2 Klein 9B Base + Ponpoke Q8 GGUF + VAE)
+- Output export: --zip-output (with Taildrop support)
 - Auto-launch: --launch
 """
 
@@ -19,6 +20,7 @@ import sys
 import shutil
 import subprocess
 import urllib.request
+import datetime
 import argparse
 from pathlib import Path
 
@@ -365,6 +367,41 @@ def download_category_items(items: list, category: str, symlink_to: str = None):
                     pass
 
 
+def zip_outputs():
+    """Zips the ComfyUI outputs folder and offers Taildrop / direct HTTP download."""
+    output_dir = COMFY_DIR / "output"
+    if not output_dir.exists() or not any(output_dir.iterdir()):
+        print(f"\n  {RED}✖ No generated images found in {output_dir}{RESET}\n")
+        return None
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_name = f"comfyui_output_{timestamp}"
+    zip_dest = WORKSPACE_DIR / base_name
+
+    print(f"\n  {YELLOW}📦 Compressing outputs from {output_dir}...{RESET}")
+    archive_path = shutil.make_archive(str(zip_dest), "zip", str(output_dir))
+    zip_file = Path(archive_path)
+
+    size_mb = zip_file.stat().st_size / (1024 * 1024)
+    print(f"  {GREEN}✔ Created archive:{RESET} {BOLD}{zip_file}{RESET} ({size_mb:.2f} MB)")
+
+    # Check for Tailscale and Taildrop option
+    if shutil.which("tailscale"):
+        print(f"\n  {CYAN}▸ Tailscale detected! Send archive via Taildrop?{RESET}")
+        target = input(f"    Enter target machine name (e.g. laptop, or press Enter to skip): ").strip()
+        if target:
+            res = subprocess.run(["tailscale", "file", "cp", str(zip_file), f"{target}:"])
+            if res.returncode == 0:
+                print(f"  {GREEN}✔ Sent via Taildrop to {target}! Check your target machine's downloads.{RESET}")
+            else:
+                print(f"  {RED}✖ Taildrop transfer failed. File remains safe at {zip_file}{RESET}")
+
+    print(f"\n  {BOLD}Alternative Download Options:{RESET}")
+    print(f"    1. RunPod Jupyter Lab: Find {zip_file.name} in file manager -> Right Click -> Download")
+    print(f"    2. Quick HTTP Server: {CYAN}python3 -m http.server 8189 -d /workspace{RESET}\n")
+    return zip_file
+
+
 def custom_download_wizard():
     print(f"\n{BOLD}{CYAN}=== Custom Hugging Face / Direct Download ==={RESET}\n")
 
@@ -428,11 +465,12 @@ def interactive_menu():
         print(f"  [{CYAN}2{RESET}] Preset: {BOLD}FLUX.2 Klein 9B Base{RESET}")
         print(f"  [{CYAN}3{RESET}] Custom Model Download (Hugging Face URL + Folder Chooser)")
         print(f"  [{CYAN}4{RESET}] Install / Update Essential Custom Nodes (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF)")
-        print(f"  [{CYAN}5{RESET}] Launch ComfyUI")
+        print(f"  [{CYAN}5{RESET}] 📦 Zip & Export Outputs (/workspace/ComfyUI/output)")
+        print(f"  [{CYAN}6{RESET}] Launch ComfyUI")
         print(f"  [{CYAN}q{RESET}] Exit")
         print()
 
-        choice = input(f"  Choice [1-5/q]: ").strip().lower()
+        choice = input(f"  Choice [1-6/q]: ").strip().lower()
 
         if choice == "1":
             run_preset("klein-9b")
@@ -447,6 +485,9 @@ def interactive_menu():
             install_all_default_nodes()
             input(f"\n  {DIM}Press Enter to continue...{RESET}")
         elif choice == "5":
+            zip_outputs()
+            input(f"\n  {DIM}Press Enter to continue...{RESET}")
+        elif choice == "6":
             launch_comfyui()
             break
         elif choice in ["q", "exit"]:
@@ -462,6 +503,7 @@ def main():
 Examples:
   comfy-dl --preset klein-9b --launch
   comfy-dl --preset klein-9b-base --launch
+  comfy-dl --zip-output
   comfy-dl --unet https://huggingface.co/.../model.safetensors
   comfy-dl --clip https://huggingface.co/.../encoder.gguf --vae https://.../model.safetensors:flux2_vae.safetensors
   comfy-dl --lora https://civitai.com/api/download/models/12345:my_lora.safetensors
@@ -480,6 +522,7 @@ Examples:
     # Presets & automated actions
     parser.add_argument("--preset", choices=list(PRESETS.keys()), help="Directly run a preset bundle non-interactively")
     parser.add_argument("--install-nodes", action="store_true", help="Install/update default custom nodes")
+    parser.add_argument("--zip-output", action="store_true", help="Compress /workspace/ComfyUI/output into a zip archive")
     parser.add_argument("--launch", action="store_true", help="Launch ComfyUI after finishing downloads")
 
     args = parser.parse_args()
@@ -492,6 +535,10 @@ Examples:
 
     if args.preset:
         run_preset(args.preset)
+        cli_action_taken = True
+
+    if args.zip_output:
+        zip_outputs()
         cli_action_taken = True
 
     if args.unet:
