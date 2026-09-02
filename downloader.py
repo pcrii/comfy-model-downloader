@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #!/usr/bin/env python3
 """
 ComfyUI Model Downloader & Manager (TUI & CLI)
@@ -8,8 +9,8 @@ Supports:
 - Chaining multiple downloads: --lora <url1> --lora <url2>
 - Custom node installation: --custom-node <git_url>
 - Presets:
-    * flux2-klein-9b-uncensored (Distilled + Uncensored Q8 GGUF)
-    * flux2-klein-base-9b (Undistilled Base + Qwen3-8B Q8 GGUF)
+    * klein-9b (Distilled FLUX.2 Klein 9B + Ponpoke Q8 GGUF + VAE)
+    * klein-9b-base (Undistilled FLUX.2 Klein 9B Base + Ponpoke Q8 GGUF + VAE)
 - Auto-launch: --launch
 """
 
@@ -37,6 +38,10 @@ COMFY_DIR = Path(os.environ.get("COMFY_DIR", WORKSPACE_DIR / "ComfyUI"))
 MODELS_DIR = COMFY_DIR / "models"
 CUSTOM_NODES_DIR = COMFY_DIR / "custom_nodes"
 VENV_DIR = Path(os.environ.get("VENV_DIR", WORKSPACE_DIR / "venv"))
+
+# Shared URLs
+PONPOKE_TEXT_ENCODER_URL = "https://huggingface.co/ponpoke/flux2-klein-9b-uncensored-text-encoder/resolve/main/flux2-klein-9b-uncensored-q8_0.gguf"
+BFL_VAE_URL = "https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/resolve/main/vae/diffusion_pytorch_model.safetensors"
 
 # Available model categories and their relative paths inside ComfyUI/models
 CATEGORY_PATHS = {
@@ -78,10 +83,10 @@ DEFAULT_NODES = [
 
 # Presets configuration
 PRESETS = {
-    "flux2-klein-9b-uncensored": {
-        "id": "flux2-klein-9b-uncensored",
-        "name": "FLUX.2 Klein 9B (Distilled + Uncensored Q8 GGUF + FP8 UNet + VAE)",
-        "description": "Fast 4-step distilled FLUX.2 Klein 9B with Ponpoke Uncensored Q8_0 GGUF text encoder",
+    "klein-9b": {
+        "id": "klein-9b",
+        "name": "FLUX.2 Klein 9B",
+        "description": "FLUX.2 Klein 9B (Distilled) with Ponpoke Q8_0 GGUF text encoder, FP8 UNet, and renamed VAE",
         "custom_nodes": [
             {
                 "name": "ComfyUI-GGUF",
@@ -92,8 +97,8 @@ PRESETS = {
         "files": [
             {
                 "category": "text_encoders",
-                "name": "Text Encoder (Q8_0 GGUF Uncensored)",
-                "url": "https://huggingface.co/ponpoke/flux2-klein-9b-uncensored-text-encoder/resolve/main/flux2-klein-9b-uncensored-q8_0.gguf",
+                "name": "Text Encoder (Q8_0 GGUF)",
+                "url": PONPOKE_TEXT_ENCODER_URL,
                 "filename": "flux2-klein-9b-uncensored-q8_0.gguf",
                 "symlink_to": "clip",
             },
@@ -105,16 +110,16 @@ PRESETS = {
             },
             {
                 "category": "vae",
-                "name": "VAE (Renamed from diffusion_pytorch_model.safetensors)",
-                "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/resolve/main/vae/diffusion_pytorch_model.safetensors",
+                "name": "VAE (flux2_vae.safetensors)",
+                "url": BFL_VAE_URL,
                 "filename": "flux2_vae.safetensors",
             },
         ],
     },
-    "flux2-klein-base-9b": {
-        "id": "flux2-klein-base-9b",
-        "name": "FLUX.2 Klein Base 9B (Undistilled + Qwen3-8B Q8 GGUF + FP8 UNet + VAE)",
-        "description": "Full undistilled foundation FLUX.2 Klein Base 9B with official Qwen3-8B Q8_0 GGUF text encoder",
+    "klein-9b-base": {
+        "id": "klein-9b-base",
+        "name": "FLUX.2 Klein 9B Base",
+        "description": "FLUX.2 Klein 9B Base (Undistilled) with Ponpoke Q8_0 GGUF text encoder, FP8 UNet, and renamed VAE",
         "custom_nodes": [
             {
                 "name": "ComfyUI-GGUF",
@@ -125,9 +130,9 @@ PRESETS = {
         "files": [
             {
                 "category": "text_encoders",
-                "name": "Text Encoder (Qwen3-8B Q8_0 GGUF)",
-                "url": "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf",
-                "filename": "Qwen3-8B-Q8_0.gguf",
+                "name": "Text Encoder (Q8_0 GGUF)",
+                "url": PONPOKE_TEXT_ENCODER_URL,
+                "filename": "flux2-klein-9b-uncensored-q8_0.gguf",
                 "symlink_to": "clip",
             },
             {
@@ -138,16 +143,19 @@ PRESETS = {
             },
             {
                 "category": "vae",
-                "name": "VAE (Renamed from diffusion_pytorch_model.safetensors)",
-                "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/resolve/main/vae/diffusion_pytorch_model.safetensors",
+                "name": "VAE (flux2_vae.safetensors)",
+                "url": BFL_VAE_URL,
                 "filename": "flux2_vae.safetensors",
             },
         ],
     },
 }
 
-# Alias for backward compatibility
-PRESETS["flux2-klein-9b"] = PRESETS["flux2-klein-9b-uncensored"]
+# Aliases for backward compatibility
+PRESETS["flux2-klein-9b"] = PRESETS["klein-9b"]
+PRESETS["flux2-klein-9b-uncensored"] = PRESETS["klein-9b"]
+PRESETS["flux2-klein-base-9b"] = PRESETS["klein-9b-base"]
+PRESETS["flux2-klein-9b-base"] = PRESETS["klein-9b-base"]
 
 
 def clear_screen():
@@ -416,8 +424,8 @@ def interactive_menu():
         print_banner()
 
         print(f"  {BOLD}Select an Option:{RESET}")
-        print(f"  [{CYAN}1{RESET}] Preset: {BOLD}FLUX.2 Klein 9B (Distilled + Uncensored Q8 GGUF){RESET}")
-        print(f"  [{CYAN}2{RESET}] Preset: {BOLD}FLUX.2 Klein Base 9B (Undistilled + Qwen3-8B Q8 GGUF){RESET}")
+        print(f"  [{CYAN}1{RESET}] Preset: {BOLD}FLUX.2 Klein 9B{RESET}")
+        print(f"  [{CYAN}2{RESET}] Preset: {BOLD}FLUX.2 Klein 9B Base{RESET}")
         print(f"  [{CYAN}3{RESET}] Custom Model Download (Hugging Face URL + Folder Chooser)")
         print(f"  [{CYAN}4{RESET}] Install / Update Essential Custom Nodes (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF)")
         print(f"  [{CYAN}5{RESET}] Launch ComfyUI")
@@ -427,10 +435,10 @@ def interactive_menu():
         choice = input(f"  Choice [1-5/q]: ").strip().lower()
 
         if choice == "1":
-            run_preset("flux2-klein-9b-uncensored")
+            run_preset("klein-9b")
             input(f"\n  {DIM}Press Enter to continue...{RESET}")
         elif choice == "2":
-            run_preset("flux2-klein-base-9b")
+            run_preset("klein-9b-base")
             input(f"\n  {DIM}Press Enter to continue...{RESET}")
         elif choice == "3":
             custom_download_wizard()
@@ -452,8 +460,8 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Examples:
-  comfy-dl --preset flux2-klein-9b-uncensored --launch
-  comfy-dl --preset flux2-klein-base-9b --launch
+  comfy-dl --preset klein-9b --launch
+  comfy-dl --preset klein-9b-base --launch
   comfy-dl --unet https://huggingface.co/.../model.safetensors
   comfy-dl --clip https://huggingface.co/.../encoder.gguf --vae https://.../model.safetensors:flux2_vae.safetensors
   comfy-dl --lora https://civitai.com/api/download/models/12345:my_lora.safetensors
