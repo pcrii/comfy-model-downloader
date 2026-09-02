@@ -332,6 +332,43 @@ PRESETS = {
             },
         ],
     },
+    "trellis-2": {
+        "id": "trellis-2",
+        "name": "TRELLIS 2 (Image-to-3D Asset Generator)",
+        "description": "Microsoft TRELLIS.2 4B image-to-3D model with int8_convrot DiT, DINOv3 vision tower, and dual shape/texture VAEs for Blender/GLB export",
+        "custom_nodes": [
+            {
+                "name": "ComfyUI-TRELLIS2",
+                "repo": "https://github.com/PozzettiAndrea/ComfyUI-TRELLIS2.git",
+            }
+        ],
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (trellis_2_int8_convrot.safetensors - 5.2GB 8-Bit)",
+                "url": "https://huggingface.co/Comfy-Org/TRELLIS.2/resolve/main/diffusion_models/trellis_2_int8_convrot.safetensors",
+                "filename": "trellis_2_int8_convrot.safetensors",
+            },
+            {
+                "category": "clip_vision",
+                "name": "Vision Tower (dino_v3_vit_l.safetensors - 1.2GB)",
+                "url": "https://huggingface.co/Comfy-Org/TRELLIS.2/resolve/main/clip_vision/dino_v3_vit_l.safetensors",
+                "filename": "dino_v3_vit_l.safetensors",
+            },
+            {
+                "category": "vae",
+                "name": "Shape VAE (trellis_2_shape_vae_bf16.safetensors - 1.1GB)",
+                "url": "https://huggingface.co/Comfy-Org/TRELLIS.2/resolve/main/vae/trellis_2_shape_vae_bf16.safetensors",
+                "filename": "trellis_2_shape_vae_bf16.safetensors",
+            },
+            {
+                "category": "vae",
+                "name": "Texture VAE (trellis_2_texture_vae_bf16.safetensors - 0.95GB)",
+                "url": "https://huggingface.co/Comfy-Org/TRELLIS.2/resolve/main/vae/trellis_2_texture_vae_bf16.safetensors",
+                "filename": "trellis_2_texture_vae_bf16.safetensors",
+            },
+        ],
+    },
 }
 
 # Aliases for backward compatibility
@@ -339,6 +376,8 @@ PRESETS["flux2-klein-9b"] = PRESETS["klein-9b"]
 PRESETS["flux2-klein-9b-uncensored"] = PRESETS["klein-9b"]
 PRESETS["flux2-klein-base-9b"] = PRESETS["klein-9b-base"]
 PRESETS["flux2-klein-9b-base"] = PRESETS["klein-9b-base"]
+PRESETS["trellis2"] = PRESETS["trellis-2"]
+
 
 
 
