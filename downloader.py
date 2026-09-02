@@ -287,9 +287,9 @@ PRESETS = {
         "files": [
             {
                 "category": "diffusion_models",
-                "name": "DiT (z_image_bf16.safetensors - load with fp8_e4m3fn in ComfyUI)",
-                "url": "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors",
-                "filename": "z_image_bf16.safetensors",
+                "name": "DiT (z_image_int8_convrot.safetensors - 8-Bit Quantized)",
+                "url": "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_int8_convrot.safetensors",
+                "filename": "z_image_int8_convrot.safetensors",
             },
             {
                 "category": "text_encoders",
@@ -313,9 +313,9 @@ PRESETS = {
         "files": [
             {
                 "category": "diffusion_models",
-                "name": "DiT (z_image_turbo_bf16.safetensors - load with fp8_e4m3fn in ComfyUI)",
-                "url": "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors",
-                "filename": "z_image_turbo_bf16.safetensors",
+                "name": "DiT (z_image_turbo_int8_convrot.safetensors - 8-Bit Quantized Turbo)",
+                "url": "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_int8_convrot.safetensors",
+                "filename": "z_image_turbo_int8_convrot.safetensors",
             },
             {
                 "category": "text_encoders",
