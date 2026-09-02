@@ -150,6 +150,137 @@ PRESETS = {
             },
         ],
     },
+    "qwen-image": {
+        "id": "qwen-image",
+        "name": "Qwen-Image 2512 (Text-to-Image)",
+        "description": "Qwen-Image-2512 Q4_K_M GGUF DiT with Qwen2.5-VL 7B text encoder, mmproj, and VAE",
+        "custom_nodes": [
+            {
+                "name": "ComfyUI-GGUF",
+                "repo": "https://github.com/city96/ComfyUI-GGUF.git",
+                "pip_packages": ["gguf"],
+            }
+        ],
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (Qwen-Image-2512 Q4_K_M GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen-Image-2512-GGUF/resolve/main/qwen-image-2512-Q4_K_M.gguf",
+                "filename": "qwen-image-2512-Q4_K_M.gguf",
+                "symlink_to": "unet",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Text Encoder (Qwen2.5-VL-7B-Instruct Q4_K_XL GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Vision Tower (Qwen2.5-VL-7B mmproj BF16 GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "vae",
+                "name": "VAE (qwen_image_vae.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors",
+                "filename": "qwen_image_vae.safetensors",
+            },
+        ],
+    },
+    "qwen-image-edit": {
+        "id": "qwen-image-edit",
+        "name": "Qwen-Image Edit 2511 (Image-to-Image / Inpainting)",
+        "description": "Qwen-Image-Edit-2511 Q4_K_M GGUF DiT with Qwen2.5-VL 7B text encoder, mmproj, and VAE",
+        "custom_nodes": [
+            {
+                "name": "ComfyUI-GGUF",
+                "repo": "https://github.com/city96/ComfyUI-GGUF.git",
+                "pip_packages": ["gguf"],
+            }
+        ],
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (Qwen-Image-Edit-2511 Q4_K_M GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen-Image-Edit-2511-GGUF/resolve/main/qwen-image-edit-2511-Q4_K_M.gguf",
+                "filename": "qwen-image-edit-2511-Q4_K_M.gguf",
+                "symlink_to": "unet",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Text Encoder (Qwen2.5-VL-7B-Instruct Q4_K_XL GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Vision Tower (Qwen2.5-VL-7B mmproj BF16 GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "vae",
+                "name": "VAE (qwen_image_vae.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors",
+                "filename": "qwen_image_vae.safetensors",
+            },
+        ],
+    },
+    "qwen-image-all": {
+        "id": "qwen-image-all",
+        "name": "Qwen-Image Complete Bundle (2512 + Edit 2511)",
+        "description": "Downloads both Qwen-Image-2512 and Qwen-Image-Edit-2511 DiTs with shared Qwen2.5-VL text encoder, mmproj, and VAE",
+        "custom_nodes": [
+            {
+                "name": "ComfyUI-GGUF",
+                "repo": "https://github.com/city96/ComfyUI-GGUF.git",
+                "pip_packages": ["gguf"],
+            }
+        ],
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (Qwen-Image-2512 Q4_K_M GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen-Image-2512-GGUF/resolve/main/qwen-image-2512-Q4_K_M.gguf",
+                "filename": "qwen-image-2512-Q4_K_M.gguf",
+                "symlink_to": "unet",
+            },
+            {
+                "category": "diffusion_models",
+                "name": "DiT (Qwen-Image-Edit-2511 Q4_K_M GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen-Image-Edit-2511-GGUF/resolve/main/qwen-image-edit-2511-Q4_K_M.gguf",
+                "filename": "qwen-image-edit-2511-Q4_K_M.gguf",
+                "symlink_to": "unet",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Text Encoder (Qwen2.5-VL-7B-Instruct Q4_K_XL GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Vision Tower (Qwen2.5-VL-7B mmproj BF16 GGUF)",
+                "url": "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
+                "filename": "Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "vae",
+                "name": "VAE (qwen_image_vae.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors",
+                "filename": "qwen_image_vae.safetensors",
+            },
+        ],
+    },
+
 }
 
 # Aliases for backward compatibility
