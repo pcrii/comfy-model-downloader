@@ -1,61 +1,62 @@
-# ComfyUI Model Downloader TUI
+# comfy-dl
 
-A lightweight, interactive Terminal UI (TUI) and CLI tool for downloading Hugging Face models and setting up custom nodes in **ComfyUI** before launching.
+A lightweight helper utility for RunPod pods to fetch ComfyUI models, text encoders, and custom nodes before launching the server.
 
-Built for **RunPod**, local Linux, and GPU cloud environments with high-speed multi-threaded downloads via `aria2c`.
-
----
-
-## ✨ Features
-
-- 🎯 **One-Click Presets:**
-  - **FLUX.2 Klein 9B:**
-    - Text Encoder: [Ponpoke Uncensored Q8_0 GGUF](https://huggingface.co/ponpoke/flux2-klein-9b-uncensored-text-encoder) -> `models/text_encoders/` & symlinked to `models/clip/`
-    - Diffusion Model: [Black Forest Labs FLUX.2 Klein 9B FP8](https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8) -> `models/diffusion_models/`
-    - VAE: [BFL VAE](https://huggingface.co/black-forest-labs/FLUX.2-klein-9B) -> saved and renamed to `flux2_vae.safetensors` in `models/vae/`
-- 🧩 **Automatic Custom Node Verification:**
-  - Automatically checks and clones [`ComfyUI-GGUF`](https://github.com/city96/ComfyUI-GGUF) and installs `gguf` python package.
-- ⚡ **Blazing Fast Downloads:**
-  - Uses `aria2c` with 16 connections per file and automatic resume.
-  - Automatically falls back to `curl` if `aria2c` is not installed.
-- 🔑 **Hugging Face Authentication:**
-  - Supports gated repos (e.g., Black Forest Labs) via `HF_TOKEN` environment variable or interactive prompt.
-- 📂 **Custom Download Wizard:**
-  - Paste any Hugging Face URL and choose from standard ComfyUI folders (`checkpoints`, `diffusion_models`, `text_encoders`, `vae`, `loras`, etc.).
+Designed primarily as a startup helper for persistent `/workspace` volumes on GPU cloud instances, using `aria2c` for fast multi-threaded downloads with automatic fallback to `curl`.
 
 ---
 
-## 🚀 Usage
+## Usage
 
-### 1. Interactive TUI Mode
-Simply run:
+### Interactive Menu
+Run without arguments inside a Web Terminal or SSH session:
 
 ```bash
-./comfy-dl
-# or
-python3 downloader.py
+comfy-dl
 ```
 
-### 2. Headless / Automated Preset Mode
-Great for startup scripts or RunPod pod launches:
+### Presets
+Built-in bundles for quick setup:
 
 ```bash
-# Download the FLUX.2 Klein 9B preset and immediately launch ComfyUI
-python3 downloader.py --preset flux2-klein-9b --launch
+# FLUX.2 Klein 9B (Distilled) + Ponpoke Q8 GGUF + VAE
+comfy-dl --preset klein-9b --launch
+
+# FLUX.2 Klein 9B Base (Undistilled) + Ponpoke Q8 GGUF + VAE
+comfy-dl --preset klein-9b-base --launch
 ```
+
+### Direct Model Flags
+Flags map directly to ComfyUI subfolders. Downloads can be chained and optionally renamed using `:custom_name`:
+
+```bash
+comfy-dl \
+  --unet "https://huggingface.co/.../model.safetensors" \
+  --clip "https://huggingface.co/.../encoder.gguf" \
+  --vae "https://huggingface.co/.../diffusion_pytorch_model.safetensors:flux2_vae.safetensors" \
+  --lora "https://civitai.com/api/download/models/12345:style.safetensors" \
+  --launch
+```
+
+| Flag | Destination |
+| :--- | :--- |
+| `--unet` | `models/diffusion_models/` |
+| `--clip` | `models/text_encoders/` & `models/clip/` |
+| `--vae` | `models/vae/` |
+| `--lora` | `models/loras/` |
+| `--checkpoint` | `models/checkpoints/` |
+| `--controlnet` | `models/controlnet/` |
+| `--upscale` | `models/upscale_models/` |
+| `--custom-node <git-url>` | Clones repo into `custom_nodes/` & installs requirements |
+| `--install-nodes` | Installs default nodes (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF) |
+| `--launch` | Starts ComfyUI server after downloads complete |
 
 ---
 
-## 📦 Push to GitHub as a Standalone Repo
+## Authentication
 
-To make this its own repository on your GitHub:
+For gated Hugging Face repositories, export an access token:
 
 ```bash
-cd /home/phaulty/Work/comfy-model-downloader
-git init
-git add .
-git commit -m "Initial commit of comfy-model-downloader"
-# Create a repo on GitHub, then link and push:
-# git remote add origin git@github.com:<your-username>/comfy-model-downloader.git
-# git push -u origin main
+export HF_TOKEN="hf_..."
 ```
