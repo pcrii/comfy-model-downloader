@@ -160,6 +160,31 @@ PRESETS["flux2-klein-base-9b"] = PRESETS["klein-9b-base"]
 PRESETS["flux2-klein-9b-base"] = PRESETS["klein-9b-base"]
 
 
+
+def patch_comfy_kitchen():
+    """Patches comfy_kitchen eager/na.py for PyTorch < 2.7 compatibility."""
+    import glob
+    search_dirs = [
+        "/usr/local/lib/python*/dist-packages",
+        str(WORKSPACE_DIR / "venv/lib/python*/site-packages"),
+        "/workspace/venv/lib/python*/site-packages",
+    ]
+    for sdir in search_dirs:
+        for p in glob.glob(f"{sdir}/comfy_kitchen/backends/eager/na.py"):
+            try:
+                with open(p, "r") as f:
+                    content = f.read()
+                if "kernel_size: list[int]" in content:
+                    content = "import typing
+" + content.replace(
+                        "kernel_size: list[int]", "kernel_size: typing.List[int]"
+                    ).replace("is_causal: list[bool]", "is_causal: typing.List[bool]")
+                    with open(p, "w") as f:
+                        f.write(content)
+                    print(f"  {GREEN}✔ Patched comfy_kitchen compatibility at {p}{RESET}")
+            except Exception:
+                pass
+
 def clear_screen():
     print("\033[H\033[J", end="")
 
@@ -526,6 +551,7 @@ Examples:
     parser.add_argument("--launch", action="store_true", help="Launch ComfyUI after finishing downloads")
 
     args = parser.parse_args()
+    patch_comfy_kitchen()
 
     cli_action_taken = False
 
