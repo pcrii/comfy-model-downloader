@@ -280,7 +280,58 @@ PRESETS = {
             },
         ],
     },
-
+    "z-image": {
+        "id": "z-image",
+        "name": "Z-Image 6B (Base)",
+        "description": "Z-Image 6B S3-DiT with Qwen 3 4B FP8 Mixed text encoder and AE VAE from Comfy-Org",
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (z_image_bf16.safetensors - load with fp8_e4m3fn in ComfyUI)",
+                "url": "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors",
+                "filename": "z_image_bf16.safetensors",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Text Encoder (qwen_3_4b_fp8_mixed.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors",
+                "filename": "qwen_3_4b_fp8_mixed.safetensors",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "vae",
+                "name": "VAE (ae.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/z_image/resolve/main/split_files/vae/ae.safetensors",
+                "filename": "ae.safetensors",
+            },
+        ],
+    },
+    "z-image-turbo": {
+        "id": "z-image-turbo",
+        "name": "Z-Image 6B Turbo (8-Step Fast Inference)",
+        "description": "Z-Image 6B Turbo S3-DiT with Qwen 3 4B FP8 Mixed text encoder and AE VAE from Comfy-Org",
+        "files": [
+            {
+                "category": "diffusion_models",
+                "name": "DiT (z_image_turbo_bf16.safetensors - load with fp8_e4m3fn in ComfyUI)",
+                "url": "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors",
+                "filename": "z_image_turbo_bf16.safetensors",
+            },
+            {
+                "category": "text_encoders",
+                "name": "Text Encoder (qwen_3_4b_fp8_mixed.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors",
+                "filename": "qwen_3_4b_fp8_mixed.safetensors",
+                "symlink_to": "clip",
+            },
+            {
+                "category": "vae",
+                "name": "VAE (ae.safetensors)",
+                "url": "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors",
+                "filename": "ae.safetensors",
+            },
+        ],
+    },
 }
 
 # Aliases for backward compatibility
