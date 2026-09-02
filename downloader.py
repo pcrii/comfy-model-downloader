@@ -336,12 +336,7 @@ PRESETS = {
         "id": "trellis-2",
         "name": "TRELLIS 2 (Image-to-3D Asset Generator)",
         "description": "Microsoft TRELLIS.2 4B image-to-3D model with int8_convrot DiT, DINOv3 vision tower, and dual shape/texture VAEs for Blender/GLB export",
-        "custom_nodes": [
-            {
-                "name": "ComfyUI-TRELLIS2",
-                "repo": "https://github.com/PozzettiAndrea/ComfyUI-TRELLIS2.git",
-            }
-        ],
+
         "files": [
             {
                 "category": "diffusion_models",
