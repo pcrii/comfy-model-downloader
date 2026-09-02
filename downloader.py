@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-ComfyUI Model Downloader & Manager TUI
-Supports Hugging Face downloads, presets (Flux.2 Klein 9B, GGUF text encoders),
-custom node verification (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF),
-and multi-threaded downloads with aria2c.
+ComfyUI Model Downloader & Manager (TUI & CLI)
+Supports:
+- Interactive TUI menu (when run with no args)
+- Direct CLI flags for any folder: --unet, --clip, --vae, --lora, --checkpoint, etc.
+- In-line renaming: --vae "https://.../model.safetensors:new_name.safetensors"
+- Chaining multiple downloads: --lora <url1> --lora <url2>
+- Custom node installation: --custom-node <git_url>
+- Presets: --preset flux2-klein-9b
+- Auto-launch: --launch
 """
 
 import os
@@ -88,7 +93,7 @@ PRESETS = {
                 "name": "Text Encoder (Q8_0 GGUF Uncensored)",
                 "url": "https://huggingface.co/ponpoke/flux2-klein-9b-uncensored-text-encoder/resolve/main/flux2-klein-9b-uncensored-q8_0.gguf",
                 "filename": "flux2-klein-9b-uncensored-q8_0.gguf",
-                "symlink_to": "clip",  # Also creates symlink in models/clip for older custom nodes
+                "symlink_to": "clip",
             },
             {
                 "category": "diffusion_models",
@@ -135,6 +140,31 @@ def get_hf_token():
     return token.strip() if token else None
 
 
+def parse_target(arg_value: str):
+    """Parses 'url' or 'url:custom_filename' or 'url::custom_filename'."""
+    arg_value = arg_value.strip()
+    if "::" in arg_value:
+        url, custom_name = arg_value.split("::", 1)
+        return clean_url(url.strip()), custom_name.strip()
+
+    last_slash = arg_value.rfind("/")
+    if last_slash != -1:
+        after_slash = arg_value[last_slash + 1 :]
+        if ":" in after_slash:
+            sub = after_slash.split(":", 1)
+            base_url = arg_value[: last_slash + 1] + sub[0]
+            return clean_url(base_url.strip()), sub[1].strip()
+
+    return clean_url(arg_value), None
+
+
+def clean_url(url: str) -> str:
+    """Converts Hugging Face blob links to direct resolve/main links."""
+    if "huggingface.co" in url and "/blob/" in url:
+        return url.replace("/blob/", "/resolve/")
+    return url
+
+
 def download_file(url: str, dest_path: Path, hf_token: str = None):
     """Downloads a file using aria2c if available, falling back to curl."""
     dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -151,10 +181,10 @@ def download_file(url: str, dest_path: Path, hf_token: str = None):
     if shutil.which("aria2c"):
         cmd = [
             "aria2c",
-            "-c",                     # resume support
-            "-x", "16",               # max connections per server
-            "-s", "16",               # split connections
-            "-k", "1M",               # min split size
+            "-c",
+            "-x", "16",
+            "-s", "16",
+            "-k", "1M",
             "--file-allocation=none",
             "--summary-interval=5",
             "-d", str(dest_path.parent),
@@ -203,13 +233,11 @@ def verify_custom_node(node_info: dict):
         print(f"    {GREEN}✔ {name} already installed in {target_dir}{RESET}")
         subprocess.run(["git", "-C", str(target_dir), "pull", "--ff-only"], check=False)
 
-    # Install pip requirements if specified
     py_exec = get_python_exec()
     for pkg in pip_packages:
         print(f"    Verifying python package: {pkg}...")
         subprocess.run([py_exec, "-m", "pip", "install", "--no-cache-dir", pkg], check=False)
 
-    # Check for requirements.txt in the custom node
     req_file = target_dir / "requirements.txt"
     if req_file.exists():
         subprocess.run([py_exec, "-m", "pip", "install", "--no-cache-dir", "-r", str(req_file)], check=False)
@@ -230,20 +258,19 @@ def run_preset(preset_key: str):
 
     print(f"\n{BOLD}{CYAN}=== Executing Preset: {preset['name']} ==={RESET}\n")
 
-    # Step 1: Check Hugging Face token (useful for gated BFL models)
     hf_token = get_hf_token()
-    if not hf_token:
+    if not hf_token and not sys.stdin.isatty():
+        pass
+    elif not hf_token:
         print(f"  {YELLOW}Notice:{RESET} Some Hugging Face models (like Black Forest Labs) may require a token.")
         user_input = input(f"  Enter your Hugging Face Token {DIM}(press Enter to skip){RESET}: ").strip()
         if user_input:
             hf_token = user_input
             os.environ["HF_TOKEN"] = user_input
 
-    # Step 2: Install / verify custom nodes
     for node in preset.get("custom_nodes", []):
         verify_custom_node(node)
 
-    # Step 3: Download model files
     for item in preset.get("files", []):
         cat = item["category"]
         filename = item["filename"]
@@ -267,21 +294,41 @@ def run_preset(preset_key: str):
     print(f"\n{GREEN}{BOLD}🎉 Preset '{preset['name']}' setup completed successfully!{RESET}\n")
 
 
+def download_category_items(items: list, category: str, symlink_to: str = None):
+    """Downloads a list of URL/URL:name strings to a specific model subfolder."""
+    hf_token = get_hf_token()
+    dest_dir = COMFY_DIR / "models" / category
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    for item_str in items:
+        url, custom_name = parse_target(item_str)
+        default_name = url.split("?")[0].split("/")[-1]
+        filename = custom_name if custom_name else default_name
+        dest_path = dest_dir / filename
+
+        success = download_file(url, dest_path, hf_token)
+        if success and symlink_to:
+            symlink_dir = COMFY_DIR / "models" / symlink_to
+            symlink_dir.mkdir(parents=True, exist_ok=True)
+            symlink_path = symlink_dir / filename
+            if not symlink_path.exists():
+                try:
+                    symlink_path.symlink_to(dest_path)
+                    print(f"  {DIM}Linked {filename} -> models/{symlink_to}/{RESET}")
+                except Exception:
+                    pass
+
+
 def custom_download_wizard():
     print(f"\n{BOLD}{CYAN}=== Custom Hugging Face / Direct Download ==={RESET}\n")
 
-    # Step 1: URL input
     url = input(f"  Enter Model URL (HuggingFace resolve/blob or direct link):\n  > ").strip()
     if not url:
         print(f"  {RED}Download cancelled.{RESET}")
         return
 
-    # Convert HF blob URL to resolve/main
-    if "huggingface.co" in url and "/blob/" in url:
-        url = url.replace("/blob/", "/resolve/")
-        print(f"  {DIM}Converted URL to direct resolve link:{RESET} {url}")
+    url = clean_url(url)
 
-    # Step 2: Category selection
     print(f"\n  Select ComfyUI Target Folder:")
     for key, (name, path) in CATEGORY_PATHS.items():
         print(f"    [{key}] {BOLD}{name:<18}{RESET} ({path})")
@@ -294,19 +341,16 @@ def custom_download_wizard():
         print(f"  {RED}Invalid choice.{RESET}")
         return
 
-    # Step 3: Filename
     default_name = url.split("?")[0].split("/")[-1]
     name_input = input(f"\n  Filename [{default_name}] (press Enter to keep, or type new name): ").strip()
     filename = name_input if name_input else default_name
 
-    # Step 4: Token
     hf_token = get_hf_token()
     if not hf_token and "huggingface.co" in url:
         tok = input(f"  HF Token (press Enter to skip): ").strip()
         if tok:
             hf_token = tok
 
-    # Execute download
     dest_path = dest_dir / filename
     download_file(url, dest_path, hf_token)
 
@@ -361,20 +405,77 @@ def interactive_menu():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ComfyUI Model Downloader TUI")
-    parser.add_argument("--preset", choices=list(PRESETS.keys()), help="Directly run a preset non-interactively")
-    parser.add_argument("--launch", action="store_true", help="Launch ComfyUI after finishing preset download")
+    parser = argparse.ArgumentParser(
+        description="ComfyUI Model Downloader & Manager CLI",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Examples:
+  comfy-dl --unet https://huggingface.co/.../model.safetensors
+  comfy-dl --clip https://huggingface.co/.../encoder.gguf --vae https://.../model.safetensors:flux2_vae.safetensors
+  comfy-dl --lora https://civitai.com/api/download/models/12345:my_lora.safetensors
+  comfy-dl --preset flux2-klein-9b --launch
+        """
+    )
+    # Direct folder flags (can be specified multiple times with action='append')
+    parser.add_argument("--unet", "--diffusion-model", dest="unet", action="append", help="Download to models/diffusion_models (supports url:custom_name)")
+    parser.add_argument("--clip", "--text-encoder", dest="clip", action="append", help="Download to models/text_encoders & symlink to models/clip")
+    parser.add_argument("--vae", dest="vae", action="append", help="Download to models/vae (supports url:custom_name)")
+    parser.add_argument("--checkpoint", "--ckpt", dest="checkpoint", action="append", help="Download to models/checkpoints")
+    parser.add_argument("--lora", dest="lora", action="append", help="Download to models/loras")
+    parser.add_argument("--controlnet", dest="controlnet", action="append", help="Download to models/controlnet")
+    parser.add_argument("--upscale", dest="upscale", action="append", help="Download to models/upscale_models")
+    parser.add_argument("--custom-node", dest="custom_node", action="append", help="Clone a custom node Git repository into custom_nodes/")
+
+    # Presets & automated actions
+    parser.add_argument("--preset", choices=list(PRESETS.keys()), help="Directly run a preset bundle non-interactively")
     parser.add_argument("--install-nodes", action="store_true", help="Install/update default custom nodes")
+    parser.add_argument("--launch", action="store_true", help="Launch ComfyUI after finishing downloads")
+
     args = parser.parse_args()
+
+    # Track if any CLI flags were provided
+    cli_action_taken = False
 
     if args.install_nodes:
         install_all_default_nodes()
+        cli_action_taken = True
 
     if args.preset:
         run_preset(args.preset)
-        if args.launch:
-            launch_comfyui()
-    elif not args.install_nodes:
+        cli_action_taken = True
+
+    # Process individual model flags
+    if args.unet:
+        download_category_items(args.unet, "diffusion_models", symlink_to="unet")
+        cli_action_taken = True
+    if args.clip:
+        download_category_items(args.clip, "text_encoders", symlink_to="clip")
+        cli_action_taken = True
+    if args.vae:
+        download_category_items(args.vae, "vae")
+        cli_action_taken = True
+    if args.checkpoint:
+        download_category_items(args.checkpoint, "checkpoints")
+        cli_action_taken = True
+    if args.lora:
+        download_category_items(args.lora, "loras")
+        cli_action_taken = True
+    if args.controlnet:
+        download_category_items(args.controlnet, "controlnet")
+        cli_action_taken = True
+    if args.upscale:
+        download_category_items(args.upscale, "upscale_models")
+        cli_action_taken = True
+    if args.custom_node:
+        for node_repo in args.custom_node:
+            node_name = node_repo.split("/")[-1].replace(".git", "")
+            verify_custom_node({"name": node_name, "repo": node_repo})
+        cli_action_taken = True
+
+    if args.launch:
+        launch_comfyui()
+    elif not cli_action_taken:
+        # If no flags passed at all, open interactive TUI
         interactive_menu()
 
 
