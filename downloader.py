@@ -2,7 +2,8 @@
 """
 ComfyUI Model Downloader & Manager TUI
 Supports Hugging Face downloads, presets (Flux.2 Klein 9B, GGUF text encoders),
-custom node verification (ComfyUI-GGUF), and multi-threaded downloads with aria2c.
+custom node verification (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF),
+and multi-threaded downloads with aria2c.
 """
 
 import os
@@ -42,6 +43,31 @@ CATEGORY_PATHS = {
     "8": ("unet", "models/unet"),
     "9": ("upscale_models", "models/upscale_models"),
 }
+
+# Default recommended custom nodes
+DEFAULT_NODES = [
+    {
+        "name": "ComfyUI-Manager",
+        "repo": "https://github.com/Comfy-Org/ComfyUI-Manager.git",
+    },
+    {
+        "name": "ComfyUI-KJNodes",
+        "repo": "https://github.com/kijai/ComfyUI-KJNodes.git",
+    },
+    {
+        "name": "Civicomfy",
+        "repo": "https://github.com/MoonGoblinDev/Civicomfy.git",
+    },
+    {
+        "name": "ComfyUI-RunpodDirect",
+        "repo": "https://github.com/MadiatorLabs/ComfyUI-RunpodDirect.git",
+    },
+    {
+        "name": "ComfyUI-GGUF",
+        "repo": "https://github.com/city96/ComfyUI-GGUF.git",
+        "pip_packages": ["gguf"],
+    },
+]
 
 # Presets configuration
 PRESETS = {
@@ -175,6 +201,7 @@ def verify_custom_node(node_info: dict):
         subprocess.run(["git", "clone", repo, str(target_dir)], check=True)
     else:
         print(f"    {GREEN}✔ {name} already installed in {target_dir}{RESET}")
+        subprocess.run(["git", "-C", str(target_dir), "pull", "--ff-only"], check=False)
 
     # Install pip requirements if specified
     py_exec = get_python_exec()
@@ -186,6 +213,13 @@ def verify_custom_node(node_info: dict):
     req_file = target_dir / "requirements.txt"
     if req_file.exists():
         subprocess.run([py_exec, "-m", "pip", "install", "--no-cache-dir", "-r", str(req_file)], check=False)
+
+
+def install_all_default_nodes():
+    print(f"\n{BOLD}{CYAN}=== Installing / Updating Recommended Custom Nodes ==={RESET}")
+    for node in DEFAULT_NODES:
+        verify_custom_node(node)
+    print(f"\n{GREEN}{BOLD}✔ All recommended custom nodes are verified and updated!{RESET}\n")
 
 
 def run_preset(preset_key: str):
@@ -302,7 +336,7 @@ def interactive_menu():
         print(f"  {BOLD}Select an Option:{RESET}")
         print(f"  [{CYAN}1{RESET}] Download Preset: {BOLD}FLUX.2 Klein 9B{RESET} (Uncensored GGUF + FP8 + VAE)")
         print(f"  [{CYAN}2{RESET}] Custom Model Download (Hugging Face URL + Folder Chooser)")
-        print(f"  [{CYAN}3{RESET}] Install / Verify ComfyUI-GGUF Custom Node")
+        print(f"  [{CYAN}3{RESET}] Install / Update Essential Custom Nodes (Manager, KJNodes, Civicomfy, RunpodDirect, GGUF)")
         print(f"  [{CYAN}4{RESET}] Launch ComfyUI")
         print(f"  [{CYAN}q{RESET}] Exit")
         print()
@@ -316,11 +350,7 @@ def interactive_menu():
             custom_download_wizard()
             input(f"\n  {DIM}Press Enter to continue...{RESET}")
         elif choice == "3":
-            verify_custom_node({
-                "name": "ComfyUI-GGUF",
-                "repo": "https://github.com/city96/ComfyUI-GGUF.git",
-                "pip_packages": ["gguf"],
-            })
+            install_all_default_nodes()
             input(f"\n  {DIM}Press Enter to continue...{RESET}")
         elif choice == "4":
             launch_comfyui()
@@ -334,13 +364,17 @@ def main():
     parser = argparse.ArgumentParser(description="ComfyUI Model Downloader TUI")
     parser.add_argument("--preset", choices=list(PRESETS.keys()), help="Directly run a preset non-interactively")
     parser.add_argument("--launch", action="store_true", help="Launch ComfyUI after finishing preset download")
+    parser.add_argument("--install-nodes", action="store_true", help="Install/update default custom nodes")
     args = parser.parse_args()
+
+    if args.install_nodes:
+        install_all_default_nodes()
 
     if args.preset:
         run_preset(args.preset)
         if args.launch:
             launch_comfyui()
-    else:
+    elif not args.install_nodes:
         interactive_menu()
 
 
