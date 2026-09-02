@@ -161,7 +161,7 @@ PRESETS["flux2-klein-9b-base"] = PRESETS["klein-9b-base"]
 
 
 def patch_comfy_kitchen():
-    """Patches comfy_kitchen eager/na.py for PyTorch < 2.7 compatibility."""
+    """Patches comfy_kitchen eager/na.py and sage_attention.py for PyTorch compatibility."""
     import glob
     search_dirs = [
         "/usr/local/lib/python*/dist-packages",
@@ -174,13 +174,26 @@ def patch_comfy_kitchen():
                 with open(p, "r") as f:
                     content = f.read()
                 if "kernel_size: list[int]" in content:
-                    content = "import typing
-" + content.replace(
+                    content = "import typing\n" + content.replace(
                         "kernel_size: list[int]", "kernel_size: typing.List[int]"
                     ).replace("is_causal: list[bool]", "is_causal: typing.List[bool]")
                     with open(p, "w") as f:
                         f.write(content)
-                    print(f"  {GREEN}✔ Patched comfy_kitchen compatibility at {p}{RESET}")
+                    print(f"  {GREEN}✔ Patched comfy_kitchen na.py at {p}{RESET}")
+            except Exception:
+                pass
+        for p in glob.glob(f"{sdir}/comfy_kitchen/sage_attention.py"):
+            try:
+                with open(p, "r") as f:
+                    content = f.read()
+                if "scale: float | None" in content:
+                    if content.startswith("import typing\n"):
+                        content = content[len("import typing\n"):]
+                    content = content.replace("from __future__ import annotations", "# from __future__ import annotations\nimport typing")
+                    content = content.replace("scale: float | None", "scale: typing.Optional[float]")
+                    with open(p, "w") as f:
+                        f.write(content)
+                    print(f"  {GREEN}✔ Patched comfy_kitchen sage_attention.py at {p}{RESET}")
             except Exception:
                 pass
 
